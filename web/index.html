@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenLead Web — Lead Generation Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="app">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">OL</div>
+                <div class="logo-full">
+                    <span class="logo-mark">OPENLEAD</span>
+                </div>
+            </div>
+            
+            <nav class="nav">
+                <a href="#dashboard" class="nav-item active" data-section="dashboard">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <rect x="3" y="3" width="7" height="7" rx="1"/>
+                        <rect x="14" y="3" width="7" height="7" rx="1"/>
+                        <rect x="14" y="14" width="7" height="7" rx="1"/>
+                        <rect x="3" y="14" width="7" height="7" rx="1"/>
+                    </svg>
+                    <span class="nav-label">Dashboard</span>
+                </a>
+                <a href="#scrape" class="nav-item" data-section="scrape">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="m21 21-4.35-4.35"/>
+                    </svg>
+                    <span class="nav-label">New Scrape</span>
+                </a>
+                <a href="#results" class="nav-item" data-section="results">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                    </svg>
+                    <span class="nav-label">Results</span>
+                </a>
+                <a href="#logs" class="nav-item" data-section="logs">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <polyline points="4 17 10 11 4 5"/>
+                        <line x1="12" y1="19" x2="20" y2="19"/>
+                    </svg>
+                    <span class="nav-label">Terminal</span>
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="status-indicator" id="connectionStatus">
+                    <span class="status-dot"></span>
+                    <span class="nav-label">Connected</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="section active">
+                <header class="page-header">
+                    <h1>Dashboard</h1>
+                    <p class="subtitle">overview</p>
+                </header>
+
+                <div class="status-bar">
+                    <div class="status-item">
+                        <span class="status-key">leads:</span>
+                        <span class="status-val" id="totalLeads">0</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-key">cities:</span>
+                        <span class="status-val" id="totalCities">-</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-key">niches:</span>
+                        <span class="status-val" id="totalNiches">-</span>
+                    </div>
+                    <div class="status-item" id="statusCard">
+                        <span class="status-key">status:</span>
+                        <span class="status-val" id="currentStatus">idle</span>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Recent Activity</h3>
+                        <button class="btn btn-secondary" onclick="refreshLogs()">Refresh</button>
+                    </div>
+                    <div class="logs-container" id="dashboardLogs">
+                        <div class="empty-state">
+                            <p>No activity yet. Start a new scrape to see results.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- New Scrape Section -->
+            <section id="scrape" class="section">
+                <header class="page-header">
+                    <h1>New Scrape</h1>
+                    <p class="subtitle">configure and start a scraping session</p>
+                </header>
+
+                <div class="form-card">
+                    <div class="form-group">
+                        <label for="maxLeads">Maximum Leads to Collect</label>
+                        <input type="number" id="maxLeads" value="100" min="1" max="1000" class="form-input">
+                        <span class="form-hint">Recommended: 100-500 for testing, up to 1000 for full runs</span>
+                    </div>
+
+                    <div class="form-group checkbox-inline">
+                        <label class="checkbox-toggle">
+                            <input type="checkbox" id="enableWhatsappFilter" checked>
+                            <span class="toggle-label">Enable WhatsApp Filtering</span>
+                            <span class="toggle-description">Validates each phone number on WhatsApp Web (opens browser for QR scan)</span>
+                        </label>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label>Cities to Search <span class="badge" id="selectedCitiesCount">0 selected</span></label>
+                            <div class="select-controls">
+                                <button class="btn btn-sm" onclick="selectAllCities()">Select All</button>
+                                <button class="btn btn-sm btn-secondary" onclick="deselectAllCities()">Deselect All</button>
+                                <button class="btn btn-sm btn-secondary" onclick="selectEurope()">Europe Only</button>
+                            </div>
+                            <div class="checkbox-list" id="citiesList">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+
+                        <div class="form-group half">
+                            <label>Business Niches <span class="badge" id="selectedNichesCount">0 selected</span></label>
+                            <div class="select-controls">
+                                <button class="btn btn-sm" onclick="selectAllNiches()">Select All</button>
+                                <button class="btn btn-sm btn-secondary" onclick="deselectAllNiches()">Deselect All</button>
+                            </div>
+                            <div class="checkbox-list" id="nichesList">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="btn btn-primary btn-lg" id="startBtn" onclick="startScraping()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="5 3 19 12 5 21 5 3"/>
+                            </svg>
+                            Start Scraping
+                        </button>
+                        <button class="btn btn-danger btn-lg" id="stopBtn" onclick="stopScraping()" disabled>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="6" y="6" width="12" height="12" rx="2"/>
+                            </svg>
+                            Stop
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Progress Panel -->
+                <div class="card progress-card" id="progressCard" style="display: none;">
+                    <div class="card-header">
+                        <h3>Scraping Progress</h3>
+                        <span class="phase-badge" id="phaseBadge">Idle</span>
+                    </div>
+                    <div class="progress-content">
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="progressBar">
+                                <div class="progress-fill" id="progressFill"></div>
+                            </div>
+                            <span class="progress-text" id="progressText">0 / 0</span>
+                        </div>
+                        <p class="current-lead" id="currentLead">-</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Results Section -->
+            <section id="results" class="section">
+                <header class="page-header">
+                    <h1>Results</h1>
+                    <p class="subtitle">view and export collected leads</p>
+                </header>
+
+                <div class="toolbar">
+                    <div class="search-box">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <path d="m21 21-4.35-4.35"/>
+                        </svg>
+                        <input type="text" id="searchResults" placeholder="Search companies, cities, phones..." onkeyup="filterResults()">
+                    </div>
+                    <div class="toolbar-actions">
+                        <button class="btn btn-secondary" onclick="downloadResults('json')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                            JSON
+                        </button>
+                        <button class="btn btn-secondary" onclick="downloadResults('csv')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                            CSV
+                        </button>
+                        <button class="btn btn-primary" onclick="downloadResults('html')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                            HTML Report
+                        </button>
+                    </div>
+                </div>
+
+                <div class="results-container">
+                    <div class="table-wrapper">
+                        <table class="results-table" id="resultsTable">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Company</th>
+                                    <th>Location</th>
+                                    <th>Phone</th>
+                                    <th>Category</th>
+                                    <th>Rating</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultsBody">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="empty-state" id="noResults">
+                        <p>No results yet. Start a scrape to collect leads.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Logs Section -->
+            <section id="logs" class="section">
+                <header class="page-header">
+                    <h1>Terminal</h1>
+                    <p class="subtitle">real-time activity log</p>
+                </header>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Activity Log</h3>
+                        <button class="btn btn-secondary" onclick="clearLogs()">Clear</button>
+                    </div>
+                    <div class="logs-terminal" id="logsTerminal">
+                        <div class="log-line log-info">Ready. Start a scrape to see live logs.</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
